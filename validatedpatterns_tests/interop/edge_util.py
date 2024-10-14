@@ -125,7 +125,7 @@ def execute_shell_command_local(cmd):
     return exit_code, out, error
 
 
-def modify_file_content(file_name):
+def modify_file_content(file_name, orig_content, new_content):
 
     with open(file_name, "r") as frb:
         logger.debug(f"Current content : {frb.readlines()}")
@@ -134,8 +134,8 @@ def modify_file_content(file_name):
         for line in file:
             print(
                 line.replace(
-                    'SENSOR_TEMPERATURE_ENABLED: "false"',
-                    'SENSOR_TEMPERATURE_ENABLED: "true"',
+                    orig_content,
+                    new_content,
                 ),
                 end="",
             )
