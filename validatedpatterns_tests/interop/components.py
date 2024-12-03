@@ -209,7 +209,21 @@ def validate_acm_self_registration_managed_clusters(openshift_dyn_client, kubefi
                 err_msg = "Failed to load kubeconfig file"
                 assert False, err_msg
 
-        clusters = ManagedCluster.get(dyn_client=openshift_dyn_client, name=site_name)
+        logger.info(f"site_name: {site_name}")
+
+        # Clusters provisioned with hcp will show name as "cluster" in kubeconfig
+        # Check "server" value instead
+        if site_name == "cluster":
+            site_name = out["clusters"][0]["cluster"]["server"]
+            logger.info(f"server: {site_name}")
+            clusters = ManagedCluster.get(
+                dyn_client=openshift_dyn_client, server=site_name
+            )
+        else:
+            clusters = ManagedCluster.get(
+                dyn_client=openshift_dyn_client, name=site_name
+            )
+
         cluster = next(clusters)
         is_managed_cluster_joined, managed_cluster_status = cluster.self_registered
 
