@@ -1,4 +1,5 @@
 import logging
+import os
 
 from ocp_resources.route import Route
 
@@ -78,5 +79,49 @@ def get_argocd_application_status(openshift_dyn_client, projects):
                             logger.info(f"\n{res}")
                 except TypeError:
                     logger.info(f"No resources found for app: {app_name}")
+
+    return unhealthy_apps
+
+
+def validate_argocd_application_values(openshift_dyn_client, projects):
+    unhealthy_apps = []
+
+    for project in projects:
+        for app in ArgoCD.get(dyn_client=openshift_dyn_client, namespace=project):
+            app_name = app.instance.metadata.name
+            logger.info(f"name: {app_name}")
+            if app_name == "config-demo" or app_name == "hello-world":
+                app_targetRepo = app.instance.status.sync.comparedTo.source.repoURL
+                app_targetRevision = (
+                    app.instance.status.sync.comparedTo.source.targetRevision
+                )
+            else:
+                app_targetRepo = app.instance.status.sync.comparedTo.sources[0].repoURL
+                app_targetRevision = app.instance.status.sync.comparedTo.sources[
+                    0
+                ].targetRevision
+
+            expected_targetRepo = (
+                "https://github.com/"
+                + os.getenv("MYGITHUBORG")
+                + "/"
+                + os.getenv("VALIDATED_PATTERNS_REPO")
+                + ".git"
+            )
+            expected_targetRevision = (
+                os.getenv("OPERATOR_TEST_BRANCH") + "-" + os.getenv("MPTS_TEST_RUN_ID")
+            )
+
+            if expected_targetRevision != app_targetRevision:
+                logger.info(
+                    f"targetRevision not matched\nexpected: {expected_targetRevision}\nactual: {app_targetRevision}"
+                )
+                unhealthy_apps.append(app_name)
+
+            elif expected_targetRepo != app_targetRepo:
+                logger.info(
+                    f"targetRepo not matched\nexpected: {expected_targetRepo}\nactual: {app_targetRepo}"
+                )
+                unhealthy_apps.append(app_name)
 
     return unhealthy_apps
