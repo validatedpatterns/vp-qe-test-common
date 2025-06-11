@@ -32,7 +32,7 @@ def get_kubeconfig(request):
 
 @pytest.fixture(scope="session")
 def kube_config(get_kubeconfig):
-    kc = Configuration
+    kc = Configuration()
     config.load_kube_config(config_file=get_kubeconfig, client_configuration=kc)
     return kc
 
