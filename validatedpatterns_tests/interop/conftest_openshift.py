@@ -2,7 +2,6 @@ import os
 
 import pytest
 from kubernetes import config
-from kubernetes.config.config_exception import ConfigException
 from openshift.dynamic import DynamicClient
 
 
@@ -19,5 +18,5 @@ def openshift_dyn_client(request):
 
     try:
         return DynamicClient(client=config.new_client_from_config(kubeconfig))
-    except ConfigException as exc:
-        pytest.fail(f"Failed to load kubeconfig '{kubeconfig}': {exc}")
+    except Exception as exc:
+        pytest.fail(f"Failed to create DynamicClient with kubeconfig '{kubeconfig}': {exc}")

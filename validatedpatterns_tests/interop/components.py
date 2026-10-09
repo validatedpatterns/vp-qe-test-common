@@ -14,10 +14,7 @@ from openshift.dynamic.exceptions import NotFoundError
 
 from validatedpatterns_tests.interop import application
 from validatedpatterns_tests.interop.crd import ManagedCluster
-from validatedpatterns_tests.interop.edge_util import (
-    get_long_live_bearer_token,
-    get_site_response,
-)
+from validatedpatterns_tests.interop.edge_util import get_site_response
 
 from . import __loggername__
 
@@ -113,41 +110,26 @@ def assert_pod_status(
 
 
 def assert_site_reachable(openshift_dyn_client: DynamicClient):
-    namespace = "vp-gitops"
-    sub_string = "argocd-dex-server-token"
-
     api_url = application.get_site_api_url(openshift_dyn_client)
 
-    bearer_token = get_long_live_bearer_token(
-        openshift_dyn_client=openshift_dyn_client,
-        namespace=namespace,
-        sub_string=sub_string,
-    )
+    try:
+        version_info = openshift_dyn_client.version
+    except Exception as exc:
+        raise AssertionError(f"Site is not reachable. URL: {api_url}") from exc
 
-    api_response = get_site_response(site_url=api_url, bearer_token=bearer_token)
-
-    assert api_response.status_code == 200, (
-        f"Site is not reachable (HTTP {api_response.status_code}). URL: {api_url}"
+    assert version_info.get("kubernetes"), (
+        f"Site is not reachable (no version returned). URL: {api_url}"
     )
 
 
 def assert_argocd_reachable(openshift_dyn_client: DynamicClient):
     namespace = "vp-gitops"
     name = "vp-gitops-server"
-    sub_string = "argocd-dex-server-token"
 
-    argocd_route_url = application.get_argocd_route_url(
+    argocd_route_url = application.get_route_url(
         openshift_dyn_client, namespace, name
     )
-    bearer_token = get_long_live_bearer_token(
-        openshift_dyn_client=openshift_dyn_client,
-        namespace=namespace,
-        sub_string=sub_string,
-    )
-
-    argocd_route_response = get_site_response(
-        site_url=argocd_route_url, bearer_token=bearer_token
-    )
+    argocd_route_response = get_site_response(site_url=argocd_route_url)
 
     assert argocd_route_response.status_code == 200, (
         f"Argocd is not reachable. Please check the deployment. (HTTP {argocd_route_response.status_code}). "

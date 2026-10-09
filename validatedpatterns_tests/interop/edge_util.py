@@ -1,6 +1,7 @@
 import base64
 import fileinput
 import logging
+from typing import Optional
 
 import requests
 from ocp_resources.secret import Secret
@@ -29,52 +30,17 @@ logger = logging.getLogger(__loggername__)
 #     return yaml_config_obj
 
 
-def get_long_live_bearer_token(
-    openshift_dyn_client: DynamicClient,
-    namespace: str = "default",
-    sub_string: str = "default-token",
-) -> str:
+def get_site_response(
+    site_url: str, bearer_token: Optional[str] = None
+) -> requests.Response:
     """
-    Return the decoded bearer token from the service account secret whose
-    name contains ``sub_string``.
+    Return the HTTP response from the site URL.
+
+    If ``bearer_token`` is provided, it is sent as an Authorization header.
     """
-    try:
-        matching_secrets = [
-            secret
-            for secret in Secret.get(
-                dyn_client=openshift_dyn_client,
-                namespace=namespace,
-            )
-            if sub_string in secret.instance.metadata.name
-        ]
-    except ProtocolError as exc:
-        # See https://github.com/kubernetes-client/python/issues/1225
-        raise RuntimeError(
-            f"Failed to retrieve secrets from namespace '{namespace}'."
-        ) from exc
-
-    if len(matching_secrets) != 1:
-        raise RuntimeError(
-            f"Expected exactly one secret matching '{sub_string}' "
-            f"in namespace '{namespace}', found {len(matching_secrets)}."
-        )
-
-    try:
-        token = matching_secrets[0].instance.data.token
-    except AttributeError as exc:
-        raise RuntimeError(
-            f"Secret '{matching_secrets[0].instance.metadata.name}' "
-            "does not contain a service account token."
-        ) from exc
-
-    return base64.b64decode(token).decode()
-
-
-def get_site_response(site_url: str, bearer_token: str) -> requests.Response:
-    """
-    Return the HTTP response from the site API.
-    """
-    headers = {"Authorization": f"Bearer {bearer_token}"}
+    headers = {}
+    if bearer_token:
+        headers["Authorization"] = f"Bearer {bearer_token}"
 
     # Suppress only the warning about verify=False.
     requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
