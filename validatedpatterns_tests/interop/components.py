@@ -14,10 +14,7 @@ from openshift.dynamic.exceptions import NotFoundError
 
 from validatedpatterns_tests.interop import application
 from validatedpatterns_tests.interop.crd import ManagedCluster
-from validatedpatterns_tests.interop.edge_util import (
-    get_long_live_bearer_token,
-    get_site_response,
-)
+from validatedpatterns_tests.interop.edge_util import get_site_response
 
 from . import __loggername__
 
