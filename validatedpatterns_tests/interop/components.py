@@ -131,20 +131,11 @@ def assert_site_reachable(openshift_dyn_client: DynamicClient):
 def assert_argocd_reachable(openshift_dyn_client: DynamicClient):
     namespace = "vp-gitops"
     name = "vp-gitops-server"
-    sub_string = "argocd-dex-server-token"
 
     argocd_route_url = application.get_route_url(
         openshift_dyn_client, namespace, name
     )
-    bearer_token = get_long_live_bearer_token(
-        openshift_dyn_client=openshift_dyn_client,
-        namespace=namespace,
-        sub_string=sub_string,
-    )
-
-    argocd_route_response = get_site_response(
-        site_url=argocd_route_url, bearer_token=bearer_token
-    )
+    argocd_route_response = get_site_response(site_url=argocd_route_url)
 
     assert argocd_route_response.status_code == 200, (
         f"Argocd is not reachable. Please check the deployment. (HTTP {argocd_route_response.status_code}). "
