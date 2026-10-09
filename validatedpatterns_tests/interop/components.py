@@ -136,7 +136,7 @@ def assert_argocd_reachable(openshift_dyn_client: DynamicClient):
     name = "vp-gitops-server"
     sub_string = "argocd-dex-server-token"
 
-    argocd_route_url = application.get_argocd_route_url(
+    argocd_route_url = application.get_route_url(
         openshift_dyn_client, namespace, name
     )
     bearer_token = get_long_live_bearer_token(

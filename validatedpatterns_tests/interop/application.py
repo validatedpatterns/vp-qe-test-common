@@ -23,7 +23,7 @@ def get_site_api_url(openshift_dyn_client: DynamicClient) -> str:
     return openshift_dyn_client.configuration.host
 
 
-def get_argocd_route_url(
+def get_route_url(
     openshift_dyn_client: DynamicClient, namespace: str, name: str
 ) -> str:
     """
@@ -32,7 +32,7 @@ def get_argocd_route_url(
     :param openshift_dyn_client: The openshift DynamicClient to connect to the cluster
     :param namespace: The namespace to find the route
     :param name: The name of the route
-    :return url: The url of the route, prefixed with http
+    :return url: The url of the route, prefixed with http/https
     """
     try:
         route = next(
@@ -44,10 +44,10 @@ def get_argocd_route_url(
         )
     except NotFoundError:
         raise RuntimeError(f"Route '{name}' was not found in namespace '{namespace}'.")
+    
+    scheme = "https" if getattr(route.instance.spec, "tls", None) else "http"
+    return f"{scheme}://{route.instance.spec.host}"
 
-    url = f"http://{route.instance.spec.host}"
-
-    return url
 
 
 def assert_argocd_applications(openshift_dyn_client, projects):
