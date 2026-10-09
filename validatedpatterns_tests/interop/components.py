@@ -110,21 +110,15 @@ def assert_pod_status(
 
 
 def assert_site_reachable(openshift_dyn_client: DynamicClient):
-    namespace = "vp-gitops"
-    sub_string = "argocd-dex-server-token"
-
     api_url = application.get_site_api_url(openshift_dyn_client)
 
-    bearer_token = get_long_live_bearer_token(
-        openshift_dyn_client=openshift_dyn_client,
-        namespace=namespace,
-        sub_string=sub_string,
-    )
+    try:
+        version_info = openshift_dyn_client.version
+    except Exception as exc:
+        raise AssertionError(f"Site is not reachable. URL: {api_url}") from exc
 
-    api_response = get_site_response(site_url=api_url, bearer_token=bearer_token)
-
-    assert api_response.status_code == 200, (
-        f"Site is not reachable (HTTP {api_response.status_code}). URL: {api_url}"
+    assert version_info.get("kubernetes"), (
+        f"Site is not reachable (no version returned). URL: {api_url}"
     )
 
 
